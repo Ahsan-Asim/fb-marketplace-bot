@@ -1,0 +1,92 @@
+[
+  {
+    "name": "_GRECAPTCHA",
+    "value": "09ABCLyOFqSsTjMEi_7rUNpN4S4Tt7TV4iFUg197QY_nJDa0Epsr62uHH0z2-j88QP9Wx0l0aD_FsSXDJZkkhs3MI",
+    "domain": "www.google.com",
+    "path": "/recaptcha",
+    "expires": 1781773670.587027,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "datr",
+    "value": "V2dGaXM2yARmqr5JWH0L5WNI",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1800781655.112969,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "sb",
+    "value": "V2dGaWGuQXZK_xEAhcPQpkQz",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1800781738.869485,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "wd",
+    "value": "1280x720",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1766826545,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "dpr",
+    "value": "1",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1766826545,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "c_user",
+    "value": "100050173969380",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1797757740.543311,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "fr",
+    "value": "1s6l0MMRUz9gOoeJo.AWeGZBp5vzUH2ABMVARssLl-to2GTTHTaySjssYD5xf2nNya_mg.BpRmes..AAA.0.0.BpRmes.AWcuLd5O0WC_rvhw-CIoSSk4G8U",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1773997740.54335,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "xs",
+    "value": "13%3AP2toSA9i87Rs0A%3A2%3A1766221733%3A-1%3A-1%3A%3AAcxiZ6NOoZMQb6tk-kRUDm2KMHU-aLx98M5afG6U3Q",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": 1797757740.543367,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "presence",
+    "value": "C%7B%22t3%22%3A%5B%5D%2C%22utc3%22%3A1766221745992%2C%22v%22%3A1%7D",
+    "domain": ".facebook.com",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "Lax"
+  }
+]
