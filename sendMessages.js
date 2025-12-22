@@ -21,12 +21,17 @@ const config = require('./config');
     const page = await context.newPage();
     await page.goto(config.marketplaceURL, { waitUntil: 'domcontentloaded' });
 
-    console.log(`🔹 Searching for "${config.keyword}"...`);
+    console.log(`🔹 Waiting for Marketplace page to fully load...`);
+    await page.waitForSelector('input[placeholder="Search Marketplace"]', { state: 'visible', timeout: 60000 });
+    console.log('✅ Marketplace fully loaded.');
+
+    // Search for listings
     await page.fill('input[placeholder="Search Marketplace"]', config.keyword);
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(5000);
 
-    // Collect listing links
+    console.log(`🔹 Waiting for search results to fully load...`);
+    await page.waitForSelector('a[role="link"][href*="/item/"]', { state: 'visible', timeout: 60000 });
+
     const listings = await page.$$eval('a[role="link"][href*="/item/"]', links =>
       links.map(link => link.href)
     );
@@ -46,37 +51,61 @@ const config = require('./config');
       try {
         const listingPage = await context.newPage();
         await listingPage.goto(url, { waitUntil: 'domcontentloaded' });
-        await listingPage.waitForTimeout(3000);
 
-        // Click "Message Seller" button
-        const messageButton = await listingPage.$('div[aria-label="Message"]') || await listingPage.$('a[href*="/messages/"]');
-
-        if (messageButton) {
-          await messageButton.click();
-          await listingPage.waitForTimeout(2000);
-
-          // Type message character by character
-          for (const char of config.message) {
-            await listingPage.keyboard.type(char, { delay: Math.floor(Math.random() * 100) + 50 }); // 50-150ms
-          }
-
-          await listingPage.keyboard.press('Enter');
-          console.log(`✅ Message sent for listing ${i + 1}.`);
-        } else {
-          console.log(`⚠️ Message button not found for listing ${i + 1}.`);
+        // Wait for message button
+        const messageButton = await listingPage.$('div[aria-label="Message"], a[href*="/messages/"]');
+        if (!messageButton) {
+          console.log(`⚠️ No message button found for listing ${i + 1}. Skipping...`);
+          await listingPage.close();
+          continue;
         }
 
-        await listingPage.close();
-      } catch (err) {
-        console.log(`❌ Failed to send message for listing ${i + 1}:`, err.message);
-      }
+        // Click message button
+        await messageButton.click();
 
-      // Random human-like delay
-      const delay = Math.floor(Math.random() * 7000) + 3000; // 3-10s
-      await page.waitForTimeout(delay);
+        // Small delay to let modal start opening
+        await listingPage.waitForTimeout(1000);
+
+        // Wait for the modal (dialog) to appear
+        const modal = await listingPage.waitForSelector('div[role="dialog"]', { state: 'visible', timeout: 30000 });
+        if (!modal) {
+          console.log(`⚠️ Message modal did not appear for listing ${i + 1}. Skipping...`);
+          await listingPage.close();
+          continue;
+        }
+
+        // Wait for the textarea inside modal
+        const messageBox = await modal.waitForSelector('textarea[dir="ltr"]', { state: 'visible', timeout: 30000 });
+        if (!messageBox) {
+          console.log(`⚠️ Message box not found in modal for listing ${i + 1}. Skipping...`);
+          await listingPage.close();
+          continue;
+        }
+
+        // Focus the textarea
+        await messageBox.click({ clickCount: 1 });
+
+        // Type message human-like
+        for (const char of config.message) {
+          await listingPage.keyboard.type(char, { delay: Math.floor(Math.random() * 100) + 50 });
+        }
+
+        // Send message
+        await listingPage.keyboard.press('Enter');
+
+        console.log(`✅ Message sent for listing ${i + 1}.`);
+        await listingPage.close();
+
+        // Random human-like delay between listings
+        const delay = Math.floor(Math.random() * 7000) + 3000; // 3-10s
+        await page.waitForTimeout(delay);
+
+      } catch (err) {
+        console.log(`❌ Failed for listing ${i + 1}:`, err.message);
+      }
     }
 
-    console.log('🎉 Step 4 completed: Messages sent.');
+    console.log('🎉 All possible messages sent successfully.');
     await browser.close();
 
   } catch (err) {
