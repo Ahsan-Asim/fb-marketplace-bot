@@ -3,6 +3,9 @@ const fs = require('fs');
 const config = require('./config');
 const chairKeywords = ['chair', 'chairs', 'stuhl', 'stühle'];
 
+// Maximum messages to send in a run
+const MAX_MESSAGES = 20;
+let messagesSent = 0;
 
 (async () => {
   let browser;
@@ -20,39 +23,23 @@ const chairKeywords = ['chair', 'chairs', 'stuhl', 'stühle'];
     await context.addCookies(cookies);
     console.log('✅ Cookies loaded. Logged in successfully.');
 
-
-
     const page = await context.newPage();
     await page.goto(config.marketplaceURL, { waitUntil: 'domcontentloaded' });
-    // await page.waitForLoadState('networkidle'); // ✅ wait until page fully loaded
-        await page.waitForTimeout(20000); // waits for 1 minute
-
+    await page.waitForTimeout(2000); // wait for full page load
 
     console.log(`🔹 Waiting for Marketplace page to fully load...`);
     await page.waitForSelector('input[placeholder="Search Marketplace"]', { state: 'visible', timeout: 120000 });
     console.log('✅ Marketplace fully loaded.');
 
-    await page.waitForTimeout(20000); // waits for 1 minute
-
+    await page.waitForTimeout(2000);
 
     // Search for listings
     await page.fill('input[placeholder="Search Marketplace"]', config.keyword);
     await page.keyboard.press('Enter');
     console.log(`🔹 Waiting for search results to fully load...`);
-
-
-// ✅ wait until search results page fully loads
-    // await page.waitForLoadState('networkidle');
-
-//     await page.waitForSelector(
-//       'a[role="link"][href*="/item/"]',
-//   { state: 'visible', timeout: 60000 }
-// );
-
-    await page.waitForTimeout(20000); // waits for 1 minute
+    await page.waitForTimeout(2000);
 
     await page.waitForSelector('a[role="link"][href*="/item/"]', { state: 'visible', timeout: 60000 });
-
     const listings = await page.$$eval('a[role="link"][href*="/item/"]', links =>
       links.map(link => link.href)
     );
@@ -61,18 +48,21 @@ const chairKeywords = ['chair', 'chairs', 'stuhl', 'stühle'];
       console.log('⚠️ No listings found.');
       return;
     }
-
     console.log(`✅ Found ${listings.length} listings.`);
 
     // Loop through listings
     for (let i = 0; i < listings.length; i++) {
+      if (messagesSent >= MAX_MESSAGES) {
+        console.log(`⚠️ Maximum message limit of ${MAX_MESSAGES} reached. Stopping.`);
+        break;
+      }
+
       const url = listings[i];
       console.log(`🔹 Opening listing ${i + 1}: ${url}`);
 
       try {
         const listingPage = await context.newPage();
         await listingPage.goto(url, { waitUntil: 'domcontentloaded' });
-       
 
         // Wait for message button
         const messageButton = await listingPage.$('div[aria-label="Message"], a[href*="/messages/"]');
@@ -84,11 +74,9 @@ const chairKeywords = ['chair', 'chairs', 'stuhl', 'stühle'];
 
         // Click message button
         await messageButton.click();
-
-        // Small delay to let modal start opening
         await listingPage.waitForTimeout(3000);
 
-        // Wait for the modal (dialog) to appear
+        // Wait for modal
         const modal = await listingPage.waitForSelector('div[role="dialog"]', { state: 'visible', timeout: 60000 });
         if (!modal) {
           console.log(`⚠️ Message modal did not appear for listing ${i + 1}. Skipping...`);
@@ -96,7 +84,7 @@ const chairKeywords = ['chair', 'chairs', 'stuhl', 'stühle'];
           continue;
         }
 
-        // Wait for the textarea inside modal
+        // Wait for textarea
         const messageBox = await modal.waitForSelector('textarea[dir="ltr"]', { state: 'visible', timeout: 60000 });
         if (!messageBox) {
           console.log(`⚠️ Message box not found in modal for listing ${i + 1}. Skipping...`);
@@ -104,45 +92,38 @@ const chairKeywords = ['chair', 'chairs', 'stuhl', 'stühle'];
           continue;
         }
 
-        // Focus the textarea
         await messageBox.click({ clickCount: 1 });
 
         // Type message human-like
         for (const char of config.message) {
-          await listingPage.keyboard.type(char, { delay: Math.floor(Math.random() * 100) + 500 });
+          await listingPage.keyboard.type(char, { delay: Math.floor(Math.random() * 100) + 10 });
         }
 
         // Send message
-        // Try clicking the Send button
-const sendButton = await modal.$(
-  'button[aria-label="Send message"], div[aria-label="Send message"]'
-);
+        const sendButton = await modal.$('button[aria-label="Send message"], div[aria-label="Send message"]');
+        if (sendButton) {
+          await sendButton.click();
+          console.log('✅ Message sent by clicking Send button');
+        } else {
+          console.log('⚠️ Send button not found, message may not be sent');
+        }
 
+        messagesSent++; // increment counter after sending
+        console.log(`✅ Message sent for listing ${i + 1}. Total sent: ${messagesSent}`);
 
-if (sendButton) {
-  await sendButton.click();
-  console.log('✅ Message sent by clicking Send button');
-} else {
-  console.log('⚠️ Send button not found, message may not be sent');
-}
-
-
-        console.log(`✅ Message sent for listing ${i + 1}.`);
         await listingPage.close();
 
-        // Random human-like delay between listings
+        // Random human-like delay
         const delay = Math.floor(Math.random() * 7000) + 3000; // 3-10s
         await page.waitForTimeout(delay);
-
-            await page.waitForTimeout(20000); // waits for 1 minute
-
+        await page.waitForTimeout(2000);
 
       } catch (err) {
         console.log(`❌ Failed for listing ${i + 1}:`, err.message);
       }
     }
 
-    console.log('🎉 All possible messages sent successfully.');
+    console.log(`🎉 Messaging process completed. Total messages sent: ${messagesSent}`);
     await browser.close();
 
   } catch (err) {
