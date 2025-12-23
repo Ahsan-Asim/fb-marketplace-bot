@@ -1,6 +1,8 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const config = require('./config');
+const chairKeywords = ['chair', 'chairs', 'stuhl', 'stühle'];
+
 
 (async () => {
   let browser;
@@ -18,18 +20,37 @@ const config = require('./config');
     await context.addCookies(cookies);
     console.log('✅ Cookies loaded. Logged in successfully.');
 
+
+
     const page = await context.newPage();
     await page.goto(config.marketplaceURL, { waitUntil: 'domcontentloaded' });
+    // await page.waitForLoadState('networkidle'); // ✅ wait until page fully loaded
+        await page.waitForTimeout(20000); // waits for 1 minute
+
 
     console.log(`🔹 Waiting for Marketplace page to fully load...`);
-    await page.waitForSelector('input[placeholder="Search Marketplace"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('input[placeholder="Search Marketplace"]', { state: 'visible', timeout: 120000 });
     console.log('✅ Marketplace fully loaded.');
+
+    await page.waitForTimeout(20000); // waits for 1 minute
+
 
     // Search for listings
     await page.fill('input[placeholder="Search Marketplace"]', config.keyword);
     await page.keyboard.press('Enter');
-
     console.log(`🔹 Waiting for search results to fully load...`);
+
+
+// ✅ wait until search results page fully loads
+    // await page.waitForLoadState('networkidle');
+
+//     await page.waitForSelector(
+//       'a[role="link"][href*="/item/"]',
+//   { state: 'visible', timeout: 60000 }
+// );
+
+    await page.waitForTimeout(20000); // waits for 1 minute
+
     await page.waitForSelector('a[role="link"][href*="/item/"]', { state: 'visible', timeout: 60000 });
 
     const listings = await page.$$eval('a[role="link"][href*="/item/"]', links =>
@@ -51,6 +72,7 @@ const config = require('./config');
       try {
         const listingPage = await context.newPage();
         await listingPage.goto(url, { waitUntil: 'domcontentloaded' });
+       
 
         // Wait for message button
         const messageButton = await listingPage.$('div[aria-label="Message"], a[href*="/messages/"]');
@@ -64,10 +86,10 @@ const config = require('./config');
         await messageButton.click();
 
         // Small delay to let modal start opening
-        await listingPage.waitForTimeout(1000);
+        await listingPage.waitForTimeout(3000);
 
         // Wait for the modal (dialog) to appear
-        const modal = await listingPage.waitForSelector('div[role="dialog"]', { state: 'visible', timeout: 30000 });
+        const modal = await listingPage.waitForSelector('div[role="dialog"]', { state: 'visible', timeout: 60000 });
         if (!modal) {
           console.log(`⚠️ Message modal did not appear for listing ${i + 1}. Skipping...`);
           await listingPage.close();
@@ -75,7 +97,7 @@ const config = require('./config');
         }
 
         // Wait for the textarea inside modal
-        const messageBox = await modal.waitForSelector('textarea[dir="ltr"]', { state: 'visible', timeout: 30000 });
+        const messageBox = await modal.waitForSelector('textarea[dir="ltr"]', { state: 'visible', timeout: 60000 });
         if (!messageBox) {
           console.log(`⚠️ Message box not found in modal for listing ${i + 1}. Skipping...`);
           await listingPage.close();
@@ -87,11 +109,23 @@ const config = require('./config');
 
         // Type message human-like
         for (const char of config.message) {
-          await listingPage.keyboard.type(char, { delay: Math.floor(Math.random() * 100) + 50 });
+          await listingPage.keyboard.type(char, { delay: Math.floor(Math.random() * 100) + 500 });
         }
 
         // Send message
-        await listingPage.keyboard.press('Enter');
+        // Try clicking the Send button
+const sendButton = await modal.$(
+  'button[aria-label="Send message"], div[aria-label="Send message"]'
+);
+
+
+if (sendButton) {
+  await sendButton.click();
+  console.log('✅ Message sent by clicking Send button');
+} else {
+  console.log('⚠️ Send button not found, message may not be sent');
+}
+
 
         console.log(`✅ Message sent for listing ${i + 1}.`);
         await listingPage.close();
@@ -99,6 +133,9 @@ const config = require('./config');
         // Random human-like delay between listings
         const delay = Math.floor(Math.random() * 7000) + 3000; // 3-10s
         await page.waitForTimeout(delay);
+
+            await page.waitForTimeout(20000); // waits for 1 minute
+
 
       } catch (err) {
         console.log(`❌ Failed for listing ${i + 1}:`, err.message);
