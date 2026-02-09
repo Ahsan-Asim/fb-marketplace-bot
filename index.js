@@ -10,10 +10,10 @@ require('dotenv').config();
   // Go to Facebook login page
   await page.goto('https://www.facebook.com/login');
 
-  console.log('Browser launched. Please log in manually.');
+  console.log('Browser launched. Please log in manually within 2 minutes');
 
   // Wait until user logs in manually
-  await page.waitForTimeout(120000); // 60 seconds for login
+  await page.waitForTimeout(30000); // 60 seconds for login
 
   // Save cookies for future runs
   const cookies = await context.cookies();
